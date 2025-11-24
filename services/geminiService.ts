@@ -2,7 +2,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Cafe } from '../types';
 
-const API_KEY = process.env.API_KEY;
+const API_KEY = import.meta.env.VITE_API_KEY;
 
 if (!API_KEY) {
   console.error("API_KEY is not set. Please set the API_KEY environment variable.");
@@ -19,7 +19,7 @@ export const generateCafeReview = async (cafeName: string): Promise<string> => {
         contents: prompt,
     });
     
-    return response.text;
+    return response.text ?? "抱歉，AI 評論生成失敗，請稍後再試。";
   } catch (error) {
     console.error("Error generating review:", error);
     return "抱歉，AI 評論生成失敗，請稍後再試。";
@@ -68,8 +68,14 @@ You MUST respond ONLY with a JSON object containing the IDs of the top 3 recomme
       }
     });
 
-    const jsonString = response.text.trim();
-    const result = JSON.parse(jsonString);
+    const jsonString = response.text ? response.text.trim() : "";
+    let result;
+    try {
+      result = JSON.parse(jsonString);
+    } catch (e) {
+      console.error("Failed to parse cafe IDs from Gemini response:", jsonString);
+      return [];
+    }
     
     if (result && Array.isArray(result.cafeIds)) {
         return result.cafeIds as number[];
