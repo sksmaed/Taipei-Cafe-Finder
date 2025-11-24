@@ -1,0 +1,5 @@
+{
+  "name": "Copy of Taipei Cafe Finder",
+  "description": "A web application to find real-time seating availability in Taipei cafes, including seats with outlets, window views, and more. It also features AI-generated reviews, menus for pre-ordering, and a mock payment system.",
+  "requestFramePermissions": []
+}
