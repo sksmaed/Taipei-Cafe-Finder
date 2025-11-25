@@ -12,29 +12,48 @@ export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '');
 
 export async function getCafes(): Promise<Cafe[]> {
     const { data, error } = await supabase
-        .from('Shop')
-        .select('*, Seat(*)');
+        .from("Shop")
+        .select(`
+        *,
+        Seat (*),
+        Menu (
+            id,
+            name,
+            is_active,
+            MenuItem (*)
+        ),
+        Review (
+            id,
+            rating,
+            comment,
+            user_id,
+            created_at
+        )
+        `)
+        .order("id", { ascending: true });
 
     if (error) {
-        console.error('Error fetching cafes:', error);
+        console.error("❌ Error fetching cafes:", error);
         throw error;
     }
 
-    return data.map((cafe: any) => ({
-        id: cafe.id,
-        name: cafe.name,
-        address: cafe.address,
-        hours: cafe.opening_hours_json?.general || '營業時間未提供',
-        imageUrl: cafe.image_url,
-        description: cafe.description || '暫無描述',
-        seats: transformSeats(cafe.Seat),
-        menu: cafe.menu || [],
-        reviews: cafe.reviews || [],
-        averageRating: cafe.average_rating,
-        reviewGrowth: cafe.review_growth,
-        tags: cafe.atmosphere_tags || [],
+    return data.map((row: any) => ({
+        id: row.id,
+        name: row.name,
+        address: row.address,
+        hours: row.opening_hours_json?.general || "營業時間未提供",
+        imageUrl: row.image_url,
+        description: row.description || "暫無描述",
+        seats: transformSeats(row.Seat),
+        menu: row.Menu?.flatMap((m: any) => m.MenuItem || []) || [],
+        reviews: row.Review || [],
+        averageRating: row.average_rating,
+        reviewGrowth: row.review_growth,
+        tags: row.atmosphere_tags || [],
     }));
 }
+
+
 
 function transformSeats(seatsData: any[]): any {
     const defaultSeat = { total: 0, available: 0 };

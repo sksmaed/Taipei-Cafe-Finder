@@ -3,8 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { CafeCard } from './components/CafeCard';
 import { CafeDetailModal } from './components/CafeDetailModal';
 import { Chatbot } from './components/Chatbot';
-import { getCafes } from './services/api';
-import { Cafe } from './types';
+import { getCafes} from './services/api';
+import { Cafe, Category } from './types';
 import { HottestCafes } from './components/HottestCafes';
 import { PersonalizedCategories } from './components/PersonalizedCategories';
 import { Icon } from './components/Icon';
@@ -160,6 +160,17 @@ const App: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [activeTab, setActiveTab] = useState('search');
+    const [categories, setCategories] = useState<Category[]>([
+        { id: 'all', name: 'All', emoji: '' },
+        { id: '貓派', name: 'Cats', emoji: '🐱' },
+        { id: '書蟲', name: 'Reading', emoji: '📚' },
+        { id: '社畜', name: 'Work', emoji: '💻' },
+        { id: '黃光派', name: 'Warm Light', emoji: '💡' },
+        { id: '復古咖', name: 'Retro', emoji: '🕰️' },
+        { id: '潮流咖', name: 'Trendy', emoji: '✨' },
+        { id: '科技感', name: 'Modern', emoji: '🤖' },
+        { id: '特殊動物', name: 'Exotic', emoji: '🦜' },
+    ]);
 
     // State for favorites
     const [favorites, setFavorites] = useState<number[]>(() => {
@@ -178,6 +189,7 @@ const App: React.FC = () => {
         };
         loadCafes();
     }, []);
+
 
     useEffect(() => {
         let results = cafes;
@@ -249,9 +261,13 @@ const App: React.FC = () => {
                         </section>
 
                         <PersonalizedCategories
+                            categories={categories}
+                            setCategories={setCategories}
                             selectedCategory={selectedCategory}
                             onSelectCategory={setSelectedCategory}
+                            // cafes={cafes}
                         />
+
 
                         <div className="mb-12 max-w-xl mx-auto">
                             <div className="relative group">

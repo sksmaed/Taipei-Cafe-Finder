@@ -43,6 +43,14 @@ export interface Cafe {
   tags: string[];
 }
 
+export interface Category {
+  id: string;
+  name: string;
+  emoji: string;
+  cafes?: number[]; // store cafeIDs
+}
+
+
 export interface CartItem {
   menuItem: MenuItem;
   quantity: number;
