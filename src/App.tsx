@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { CafeCard } from './components/CafeCard';
 import { CafeDetailModal } from './components/CafeDetailModal';
 import { Chatbot } from './components/Chatbot';
-import { mockCafes } from './services/mockData';
+import { getCafes } from './services/api';
 import { Cafe } from './types';
 import { HottestCafes } from './components/HottestCafes';
 import { PersonalizedCategories } from './components/PersonalizedCategories';
@@ -25,7 +25,7 @@ const ArticleView = () => (
             <p className="text-brand-accent text-xs font-bold tracking-[0.2em] uppercase mb-3">Read & Explore</p>
             <h2 className="text-4xl font-serif font-medium text-brand-dark tracking-wide">The Coffee Journal</h2>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
             {[
                 { id: 1, title: "The Best Beans of 2024", excerpt: "Discover the top-rated coffee beans that are taking Taipei by storm this year.", img: "https://picsum.photos/seed/article1/600/400" },
@@ -66,7 +66,7 @@ const MemberView: React.FC<MemberViewProps> = ({ favoritedCafes, onSelectCafe, f
                 </div>
                 <h2 className="text-3xl font-serif font-medium text-brand-dark mb-2">Alex Chen</h2>
                 <p className="text-brand-accent text-xs font-bold tracking-[0.2em] uppercase mb-8">Gold Member</p>
-                
+
                 <div className="grid grid-cols-3 gap-4 border-y border-gray-100 py-8 mb-8">
                     <div>
                         <p className="text-2xl font-serif text-brand-dark mb-1">12</p>
@@ -88,12 +88,12 @@ const MemberView: React.FC<MemberViewProps> = ({ favoritedCafes, onSelectCafe, f
                 {favoritedCafes.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
                         {favoritedCafes.map(cafe => (
-                            <CafeCard 
-                                key={cafe.id} 
-                                cafe={cafe} 
-                                onSelect={onSelectCafe} 
-                                isFavorite={true} 
-                                onToggleFavorite={onToggleFavorite} 
+                            <CafeCard
+                                key={cafe.id}
+                                cafe={cafe}
+                                onSelect={onSelectCafe}
+                                isFavorite={true}
+                                onToggleFavorite={onToggleFavorite}
                             />
                         ))}
                     </div>
@@ -113,10 +113,10 @@ const MemberView: React.FC<MemberViewProps> = ({ favoritedCafes, onSelectCafe, f
                     ))}
                 </div>
             </div>
-            
-             <div className="text-center mt-12">
+
+            <div className="text-center mt-12">
                 <button className="text-xs text-gray-400 uppercase tracking-widest hover:text-red-500 transition-colors">Sign Out</button>
-             </div>
+            </div>
         </div>
     </div>
 );
@@ -154,165 +154,173 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab }) => {
 };
 
 const App: React.FC = () => {
-  const [cafes, setCafes] = useState<Cafe[]>([]);
-  const [filteredCafes, setFilteredCafes] = useState<Cafe[]>([]);
-  const [selectedCafe, setSelectedCafe] = useState<Cafe | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [activeTab, setActiveTab] = useState('search');
-  
-  // State for favorites
-  const [favorites, setFavorites] = useState<number[]>(() => {
-      const saved = localStorage.getItem('favorites');
-      return saved ? JSON.parse(saved) : [];
-  });
+    const [cafes, setCafes] = useState<Cafe[]>([]);
+    const [filteredCafes, setFilteredCafes] = useState<Cafe[]>([]);
+    const [selectedCafe, setSelectedCafe] = useState<Cafe | null>(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState('all');
+    const [activeTab, setActiveTab] = useState('search');
 
-  useEffect(() => {
-    setCafes(mockCafes);
-  }, []);
-  
-  useEffect(() => {
-    let results = cafes;
+    // State for favorites
+    const [favorites, setFavorites] = useState<number[]>(() => {
+        const saved = localStorage.getItem('favorites');
+        return saved ? JSON.parse(saved) : [];
+    });
 
-    if (selectedCategory !== 'all') {
-      results = results.filter(cafe => cafe.tags.includes(selectedCategory));
-    }
+    useEffect(() => {
+        const loadCafes = async () => {
+            try {
+                const data = await getCafes();
+                setCafes(data);
+            } catch (error) {
+                console.error('Failed to load cafes:', error);
+            }
+        };
+        loadCafes();
+    }, []);
 
-    if (searchTerm) {
-        results = results.filter(cafe =>
-            cafe.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            cafe.address.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-    }
-    
-    setFilteredCafes(results);
-  }, [searchTerm, selectedCategory, cafes]);
+    useEffect(() => {
+        let results = cafes;
 
-  const handleSelectCafe = (cafe: Cafe) => {
-    setSelectedCafe(cafe);
-  };
+        if (selectedCategory !== 'all') {
+            results = results.filter(cafe => cafe.tags.includes(selectedCategory));
+        }
 
-  const handleCloseModal = () => {
-    setSelectedCafe(null);
-  };
+        if (searchTerm) {
+            results = results.filter(cafe =>
+                cafe.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                cafe.address.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+        }
 
-  const toggleFavorite = (e: React.MouseEvent, cafeId: number) => {
-      e.stopPropagation();
-      setFavorites(prev => {
-          const newFavs = prev.includes(cafeId) 
-              ? prev.filter(id => id !== cafeId)
-              : [...prev, cafeId];
-          localStorage.setItem('favorites', JSON.stringify(newFavs));
-          return newFavs;
-      });
-  };
-  
-  return (
-    <div className="min-h-screen bg-brand-secondary font-sans text-brand-primary selection:bg-brand-accent/30 selection:text-brand-dark pb-24">
-      <Header />
-      
-      <main>
-        {activeTab === 'search' && (
-            <div className="container mx-auto px-4 py-12 max-w-7xl animate-fade-in">
-                <HottestCafes 
-                    cafes={cafes} 
-                    onSelectCafe={handleSelectCafe} 
-                    favorites={favorites}
-                    onToggleFavorite={toggleFavorite}
-                />
+        setFilteredCafes(results);
+    }, [searchTerm, selectedCategory, cafes]);
 
-                <section className="mb-20">
-                    <div className="flex items-center mb-10 justify-center">
-                        <div className="h-px bg-gray-300 w-12 md:w-24 opacity-50"></div>
-                        <h2 className="text-2xl font-serif font-medium text-brand-dark mx-6 tracking-widest uppercase">Xinyi District</h2>
-                        <div className="h-px bg-gray-300 w-12 md:w-24 opacity-50"></div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-                        {cafes.filter(c => c.address.includes('信義區')).slice(0, 3).map(cafe => (
-                            <CafeCard 
-                                key={cafe.id} 
-                                cafe={cafe} 
-                                onSelect={handleSelectCafe}
-                                isFavorite={favorites.includes(cafe.id)}
-                                onToggleFavorite={toggleFavorite}
-                            />
-                        ))}
-                    </div>
-                </section>
+    const handleSelectCafe = (cafe: Cafe) => {
+        setSelectedCafe(cafe);
+    };
 
-                <PersonalizedCategories 
-                    selectedCategory={selectedCategory} 
-                    onSelectCategory={setSelectedCategory} 
-                />
-                
-                <div className="mb-12 max-w-xl mx-auto">
-                    <div className="relative group">
-                        <input
-                            type="text"
-                            placeholder="Search by name or address..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full py-3 px-8 text-base bg-white border border-brand-border rounded-full focus:outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent transition-all duration-300 shadow-sm group-hover:shadow-md placeholder-gray-400 font-light tracking-wide"
+    const handleCloseModal = () => {
+        setSelectedCafe(null);
+    };
+
+    const toggleFavorite = (e: React.MouseEvent, cafeId: number) => {
+        e.stopPropagation();
+        setFavorites(prev => {
+            const newFavs = prev.includes(cafeId)
+                ? prev.filter(id => id !== cafeId)
+                : [...prev, cafeId];
+            localStorage.setItem('favorites', JSON.stringify(newFavs));
+            return newFavs;
+        });
+    };
+
+    return (
+        <div className="min-h-screen bg-brand-secondary font-sans text-brand-primary selection:bg-brand-accent/30 selection:text-brand-dark pb-24">
+            <Header />
+
+            <main>
+                {activeTab === 'search' && (
+                    <div className="container mx-auto px-4 py-12 max-w-7xl animate-fade-in">
+                        <HottestCafes
+                            cafes={cafes}
+                            onSelectCafe={handleSelectCafe}
+                            favorites={favorites}
+                            onToggleFavorite={toggleFavorite}
                         />
-                         <div className="absolute right-5 top-1/2 transform -translate-y-1/2 text-gray-400">
-                            <Icon name="search" className="w-5 h-5" />
+
+                        <section className="mb-20">
+                            <div className="flex items-center mb-10 justify-center">
+                                <div className="h-px bg-gray-300 w-12 md:w-24 opacity-50"></div>
+                                <h2 className="text-2xl font-serif font-medium text-brand-dark mx-6 tracking-widest uppercase">Xinyi District</h2>
+                                <div className="h-px bg-gray-300 w-12 md:w-24 opacity-50"></div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                                {cafes.filter(c => c.address.includes('信義區')).slice(0, 3).map(cafe => (
+                                    <CafeCard
+                                        key={cafe.id}
+                                        cafe={cafe}
+                                        onSelect={handleSelectCafe}
+                                        isFavorite={favorites.includes(cafe.id)}
+                                        onToggleFavorite={toggleFavorite}
+                                    />
+                                ))}
+                            </div>
+                        </section>
+
+                        <PersonalizedCategories
+                            selectedCategory={selectedCategory}
+                            onSelectCategory={setSelectedCategory}
+                        />
+
+                        <div className="mb-12 max-w-xl mx-auto">
+                            <div className="relative group">
+                                <input
+                                    type="text"
+                                    placeholder="Search by name or address..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="w-full py-3 px-8 text-base bg-white border border-brand-border rounded-full focus:outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent transition-all duration-300 shadow-sm group-hover:shadow-md placeholder-gray-400 font-light tracking-wide"
+                                />
+                                <div className="absolute right-5 top-1/2 transform -translate-y-1/2 text-gray-400">
+                                    <Icon name="search" className="w-5 h-5" />
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-                {filteredCafes.map(cafe => (
-                    <CafeCard 
-                        key={cafe.id} 
-                        cafe={cafe} 
-                        onSelect={handleSelectCafe}
-                        isFavorite={favorites.includes(cafe.id)}
-                        onToggleFavorite={toggleFavorite}
-                    />
-                ))}
-                </div>
-                
-                {filteredCafes.length === 0 && (
-                    <div className="text-center col-span-full py-24">
-                        <p className="text-xl font-serif italic text-gray-400">No cafes found matching your criteria.</p>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                            {filteredCafes.map(cafe => (
+                                <CafeCard
+                                    key={cafe.id}
+                                    cafe={cafe}
+                                    onSelect={handleSelectCafe}
+                                    isFavorite={favorites.includes(cafe.id)}
+                                    onToggleFavorite={toggleFavorite}
+                                />
+                            ))}
+                        </div>
+
+                        {filteredCafes.length === 0 && (
+                            <div className="text-center col-span-full py-24">
+                                <p className="text-xl font-serif italic text-gray-400">No cafes found matching your criteria.</p>
+                            </div>
+                        )}
                     </div>
                 )}
-            </div>
-        )}
 
-        {activeTab === 'articles' && <ArticleView />}
-        {activeTab === 'member' && (
-            <MemberView 
-                favoritedCafes={cafes.filter(c => favorites.includes(c.id))} 
-                onSelectCafe={handleSelectCafe}
-                favorites={favorites}
-                onToggleFavorite={toggleFavorite}
-            />
-        )}
+                {activeTab === 'articles' && <ArticleView />}
+                {activeTab === 'member' && (
+                    <MemberView
+                        favoritedCafes={cafes.filter(c => favorites.includes(c.id))}
+                        onSelectCafe={handleSelectCafe}
+                        favorites={favorites}
+                        onToggleFavorite={toggleFavorite}
+                    />
+                )}
 
-      </main>
-      
-      {activeTab === 'search' && (
-        <footer className="border-t border-brand-border py-8 mt-12 bg-white">
-            <div className="container mx-auto px-4 text-center text-gray-400 text-xs tracking-widest uppercase">
-                &copy; {new Date().getFullYear()} Taipei Cafe Finder. All rights reserved.
-            </div>
-        </footer>
-      )}
+            </main>
 
-      <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
+            {activeTab === 'search' && (
+                <footer className="border-t border-brand-border py-8 mt-12 bg-white">
+                    <div className="container mx-auto px-4 text-center text-gray-400 text-xs tracking-widest uppercase">
+                        &copy; {new Date().getFullYear()} Taipei Cafe Finder. All rights reserved.
+                    </div>
+                </footer>
+            )}
 
-      {selectedCafe && (
-          <CafeDetailModal 
-            cafe={selectedCafe} 
-            onClose={handleCloseModal} 
-            isFavorite={favorites.includes(selectedCafe.id)}
-            onToggleFavorite={(e) => toggleFavorite(e, selectedCafe.id)}
-          />
-      )}
-      <Chatbot cafes={cafes} onSelectCafe={handleSelectCafe} />
-    </div>
-  );
+            <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
+
+            {selectedCafe && (
+                <CafeDetailModal
+                    cafe={selectedCafe}
+                    onClose={handleCloseModal}
+                    isFavorite={favorites.includes(selectedCafe.id)}
+                    onToggleFavorite={(e) => toggleFavorite(e, selectedCafe.id)}
+                />
+            )}
+            <Chatbot cafes={cafes} onSelectCafe={handleSelectCafe} />
+        </div>
+    );
 };
 
 export default App;
