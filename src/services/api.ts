@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { Cafe } from '../types';
+import { Cafe, Article } from '../types';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -53,7 +53,19 @@ export async function getCafes(): Promise<Cafe[]> {
     }));
 }
 
+export async function getArticles(): Promise<Article[]> {
+    const { data, error } = await supabase
+        .from('Article')
+        .select('*')
+        .order('created_at', { ascending: false });
 
+    if (error) {
+        console.error('Error fetching articles:', error);
+        throw error;
+    }
+
+    return data || [];
+}
 
 function transformSeats(seatsData: any[]): any {
     const defaultSeat = { total: 0, available: 0 };
