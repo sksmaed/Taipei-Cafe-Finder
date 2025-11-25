@@ -62,3 +62,12 @@ export interface ChatMessage {
   text: string;
   recommendations?: Cafe[];
 }
+
+export interface Article {
+  id: number;
+  user_id: number;
+  title: string;
+  content: string | null;
+  created_at: string;
+  updated_at: string | null;
+}
